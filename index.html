@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <title>Chatbot</title>
+  <style>
+    /* Add some basic styles to the chat window */
+    #chat-window {
+      border: 1px solid black;
+      height: 300px;
+      width: 400px;
+      overflow-y: scroll;
+      padding: 10px;
+    }
+
+    /* Add some styles for the chat messages */
+    .user-message {
+      background-color: #0099ff;
+      color: white;
+      padding: 10px;
+      border-radius: 10px;
+      margin-bottom: 10px;
+    }
+
+    .bot-message {
+      background-color: #cccccc;
+      color: black;
+      padding: 10px;
+      border-radius: 10px;
+      margin-bottom: 10px;
+    }
+
+    /* Add some styles for the input field and send button */
+    #user-input {
+      width: 300px;
+      height: 30px;
+      border: 1px solid #cccccc;
+      border-radius: 5px;
+      padding: 5px;
+      margin-right: 10px;
+    }
+
+    #send-button {
+      height: 30px;
+      border-radius: 5px;
+      background-color: #0099ff;
+      color: white;
+      padding: 5px 10px;
+      border: none;
+      cursor: pointer;
+    }
+
+    #send-button:hover {
+      background-color: #0080ff;
+    }
+  </style>
+</head>
+
+<body>
+  <div id="chat-window">
+    <!-- Chat messages will be displayed here -->
+  </div>
+  <input type="text" id="user-input" placeholder="Type your message...">
+  <button type="button" id="send-button">Send</button>
+
+  <script>
+      // Define an object to store the chat history
+    let chatHistory = [];
+
+    // Define a function to add a message to the chat history
+    function addToHistory(message, isUser) {
+      chatHistory.push({
+        message: message,
+        isUser: isUser
+      });
+    }
+
+    // Define a function to display the chat history in the chat window
+    function displayChatHistory() {
+      let chatWindow = document.getElementById('chat-window');
+      chatWindow.innerHTML = '';
+      chatHistory.forEach(function (chat) {
+        let messageElement = document.createElement('div');
+        messageElement.classList.add(chat.isUser ? 'user-message' : 'bot-message');
+        messageElement.textContent = chat.message;
+        chatWindow.appendChild(messageElement);
+      });
+    }
+// Define a function to generate a bot response based on user input
+async function generateBotResponse(userInput) {
+  let word = userInput.trim();
+
+  // Make a request to a dictionary website and scrape the definition and examples from the response
+  let response = await fetch(`https://www.dictionary.com/browse/${word}`);
+  let html = await response.text();
+  let parser = new DOMParser();
+  let doc = parser.parseFromString(html, 'text/html');
+  let definition = doc.querySelector('.one-click-content > .e1q3nk1v3').textContent;
+  let examples = Array.from(doc.querySelectorAll('.one-click-content > .luna-example > .ex-sent > span')).map(span => span.textContent).join('\n');
+
+  if (definition && examples) {
+    // If the word is found in the dictionary, return the definition and examples
+    return `${word}: ${definition}\nExamples:\n${examples}`;
+  } else {
+    // If the word is not found in the dictionary, return a message saying so
+    return `Sorry, I couldn't find a definition for ${word}.`;
+  }
+}
+
+// Define a function to handle user input
+function handleUserInput() {
+  let userInput = document.getElementById('user-input').value;
+
+  // Add the user's message to the chat history
+  addToHistory(userInput, true);
+
+  // Clear the input field
+  document.getElementById('user-input').value = '';
+
+  // Generate a response from the bot and add it to the chat history
+  generateBotResponse(userInput)
+    .then(response => {
+      addToHistory(response, false);
+      displayChatHistory();
+    });
+}
+
+// Add an event listener to the send button
+document.getElementById('send-button').addEventListener('click', handleUserInput);
+
+// Display the chat history when the page loads
+displayChatHistory();
+
+  </script>
+</body>
+
+</html>
